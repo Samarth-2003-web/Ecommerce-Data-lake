@@ -80,7 +80,7 @@
         </ul>
     </div>
 
-    <script>
+    <script type="text/javascript">
         var revenueGraph = {{ revenue_graph|safe }};
         Plotly.newPlot('revenueChart', revenueGraph.data, revenueGraph.layout);
 
