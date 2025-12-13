@@ -4,92 +4,216 @@
     <title>E-Commerce Dashboard</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #66eaea 0%, #f77272 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
         }
         h1 {
-            color: #333;
+            color: white;
             text-align: center;
+            font-size: 3.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-weight: 600;
         }
         h2 {
-            color: #666;
-            border-bottom: 2px solid #4CAF50;
-            padding-bottom: 5px;
+            color: #333;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+            font-weight: 600;
         }
         .graph-container {
             background: white;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .graph-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+        }
+        .section-container {
+            display: flex;
+            gap: 25px;
+            margin: 25px 0;
+        }
+        .section-container > div {
+            flex: 1;
+            min-width: 0;
         }
         ul {
             list-style-type: none;
             padding: 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        ul::-webkit-scrollbar {
+            width: 8px;
+        }
+        ul::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ul::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+        ul::-webkit-scrollbar-thumb:hover {
+            background: #22ecec;
         }
         li {
-            padding: 8px;
-            margin: 5px 0;
+            padding: 12px 15px;
+            margin: 8px 0;
+            background: linear-gradient(90deg, #d5f0df 0%, #ffe3e3 100%);
+            border-left: 5px solid #667eea;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-size: 1.25em;
+        }
+        li:hover {
+            background: linear-gradient(90deg, #8d92f7 0%, #f8f9ff 100%);
+            border-left-color: #218bce;
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+        .filter-container {
             background: white;
-            border-left: 4px solid #2196F3;
-            border-radius: 4px;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .filter-container label {
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+        .filter-container select {
+            padding: 10px 15px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 1em;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .filter-container select:hover {
+            border-color: #764ba2;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        .filter-container select:focus {
+            outline: none;
+            border-color: #764ba2;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+        @media (max-width: 768px) {
+            .section-container {
+                flex-direction: column;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+            .filter-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>E-Commerce Analytics Dashboard</h1>
+    <div class="container">
+        <h1>📊 E-Commerce Analytics Dashboard</h1>
 
-    <div class="graph-container">
-        <div id="revenueChart"></div>
+        <div class="filter-container">
+            <label for="dayRange">📅 Select Date Range:</label>
+            <select id="dayRange" onchange="updateDashboard()">
+                <option value="7" {% if selected_days == 7 %}selected{% endif %}>Last 7 Days</option>
+                <option value="10" {% if selected_days == 10 %}selected{% endif %}>Last 10 Days</option>
+                <option value="15" {% if selected_days == 15 %}selected{% endif %}>Last 15 Days</option>
+                <option value="30" {% if selected_days == 30 %}selected{% endif %}>Last 30 Days</option>
+                <option value="60" {% if selected_days == 60 %}selected{% endif %}>Last 60 Days</option>
+                <option value="90" {% if selected_days == 90 %}selected{% endif %}>Last 90 Days</option>
+            </select>
+        </div>
+
+        <div class="section-container">
+        <div class="graph-container">
+            <div id="revenueChart"></div>
+        </div>
+
+        <div class="graph-container">
+            <h2>Daily Revenue (Last {{ selected_days }} Days)</h2>
+            <ul>
+            {% for date, revenue in daily_revenue.items() %}
+                <li>{{ date }}: ₹{{ "%.2f"|format(revenue) }}</li>
+            {% endfor %}
+            </ul>
+        </div>
     </div>
 
-    <div class="graph-container">
-        <h2>Daily Revenue (Last 10 Days)</h2>
-        <ul>
-        {% for date, revenue in daily_revenue.items() %}
-            <li>{{ date }}: ₹{{ "%.2f"|format(revenue) }}</li>
-        {% endfor %}
-        </ul>
+    <div class="section-container">
+        <div class="graph-container">
+            <div id="productsChart"></div>
+        </div>
+
+        <div class="graph-container">
+            <h2>Top 10 Products</h2>
+            <ul>
+            {% for product, qty in top_products.items() %}
+                <li>Product {{ product }} — {{ qty }} units sold</li>
+            {% endfor %}
+            </ul>
+        </div>
     </div>
 
-    <div class="graph-container">
-        <div id="productsChart"></div>
-    </div>
+    <div class="section-container">
+        <div class="graph-container">
+            <div id="locationChart"></div>
+        </div>
 
-    <div class="graph-container">
-        <h2>Top 10 Products</h2>
-        <ul>
-        {% for product, qty in top_products.items() %}
-            <li>Product {{ product }} — {{ qty }} units sold</li>
-        {% endfor %}
-        </ul>
-    </div>
-
-    <div class="graph-container">
-        <div id="locationChart"></div>
-    </div>
-
-    <div class="graph-container">
-        <h2>Revenue By Location</h2>
-        <ul>
-        {% for location, revenue in revenue_by_location.items() %}
-            <li>{{ location }}: ₹{{ "%.2f"|format(revenue) }}</li>
-        {% endfor %}
-        </ul>
+        <div class="graph-container">
+            <h2>Revenue By Location</h2>
+            <ul>
+            {% for location, revenue in revenue_by_location.items() %}
+                <li>{{ location }}: ₹{{ "%.2f"|format(revenue) }}</li>
+            {% endfor %}
+            </ul>
+        </div>
     </div>
 
     <script type="text/javascript">
-        var revenueGraph = {{ revenue_graph|safe }};
+        // Jinja2 template variables injected below
+        var revenueGraph = JSON.parse('{{ revenue_graph|tojson|safe }}');
         Plotly.newPlot('revenueChart', revenueGraph.data, revenueGraph.layout);
 
-        var productsGraph = {{ products_graph|safe }};
+        var productsGraph = JSON.parse('{{ products_graph|tojson|safe }}');
         Plotly.newPlot('productsChart', productsGraph.data, productsGraph.layout);
 
-        var locationGraph = {{ location_graph|safe }};
+        var locationGraph = JSON.parse('{{ location_graph|tojson|safe }}');
         Plotly.newPlot('locationChart', locationGraph.data, locationGraph.layout);
-    </script>
 
+        function updateDashboard() {
+            const days = document.getElementById('dayRange').value;
+            window.location.href = '/?days=' + days;
+        }
+    </script>
+    </div>
 </body>
 </html>

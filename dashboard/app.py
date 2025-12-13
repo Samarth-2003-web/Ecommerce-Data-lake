@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 import pandas as pd
 from pathlib import Path
 import plotly.express as px
@@ -15,12 +15,12 @@ gold_dir = base_dir / "data" / "gold"
 # Helper functions
 # -----------------------------
 
-def get_daily_revenue():
+def get_daily_revenue(days=10):
     orders = pd.read_csv(gold_dir / "fact_orders.csv")
     orders['order_date'] = pd.to_datetime(orders['order_date'])
     daily = orders.groupby(orders['order_date'].dt.date)['total_amount'].sum().sort_index()
-    # Get last 10 days
-    daily = daily.tail(10)
+    # Get last N days
+    daily = daily.tail(days)
     return daily
 
 def get_top_products():
@@ -39,7 +39,10 @@ def get_revenue_by_location():
 
 @app.route("/")
 def dashboard():
-    daily_revenue = get_daily_revenue()
+    # Get the number of days from query parameter, default to 10
+    days = request.args.get('days', default=10, type=int)
+    
+    daily_revenue = get_daily_revenue(days)
     top_products = get_top_products()
     revenue_by_location = get_revenue_by_location()
     
@@ -49,9 +52,9 @@ def dashboard():
         x=daily_revenue.index, 
         y=daily_revenue.values,
         labels={'x': 'Date', 'y': 'Revenue (₹)'},
-        title='Daily Revenue (Last 10 Days)'
+        title=f'Daily Revenue (Last {days} Days)'
     )
-    fig_revenue.update_traces(line_color='#4CAF50', line_width=3)
+    fig_revenue.update_traces(line_color='#667eea', line_width=3)
     revenue_graph = fig_revenue.to_json()
     
     # Top Products Bar Chart
@@ -78,7 +81,8 @@ def dashboard():
                            revenue_by_location=revenue_by_location.to_dict(),
                            revenue_graph=revenue_graph,
                            products_graph=products_graph,
-                           location_graph=location_graph)
+                           location_graph=location_graph,
+                           selected_days=days)
 
 if __name__ == "__main__":
     app.run(debug=True)
